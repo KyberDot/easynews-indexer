@@ -1,5 +1,3 @@
-# [☕ Please support my work on Buy Me a Coffee](https://buymeacoffee.com/gaikwadsank)
-
 # Easynews Newznab-like server
 
 Flask server that bridges Easynews search to a Newznab-like API so you can add it to Prowlarr as a custom indexer and download NZBs. Video-only, sorts by relevance, returns as many results as possible, and filters files smaller than 100 MB.
