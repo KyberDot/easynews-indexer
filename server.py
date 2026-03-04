@@ -237,6 +237,17 @@ _KNOWN_FANSUB_GROUPS = {
 _SANITIZE_SYMBOLS_RE = re.compile(r"[\.\-_:\s]+")
 _NON_ALNUM_RE = re.compile(r"[^\w\sÀ-ÿ]")
 
+# Foreign TV detection patterns
+_FOREIGN_KEYWORDS_RE = re.compile(
+    r"\b(FRENCH|TRUEFRENCH|VFF|VF|VOSTFR|VOST|GERMAN|DEUTSCH|SPANISH|ESPANOL|"
+    r"ITALIAN|ITALIANO|PORTUGUESE|PORTUGUES|DUTCH|FLEMISH|NORDIC|SWEDISH|DANISH|"
+    r"NORWEGIAN|FINNISH|POLISH|CZECH|SLOVAK|HUNGARIAN|ROMANIAN|TURKISH|ARABIC|"
+    r"HEBREW|GREEK|RUSSIAN|UKRAINIAN|KOREAN|CHINESE|MANDARIN|CANTONESE|JAPANESE|"
+    r"THAI|HINDI|TAMIL|MULTI|MULTILINGUAL|DUBBED|SUBBED|SUB|MULTISUB)\b",
+    re.IGNORECASE,
+)
+_NON_LATIN_RE = re.compile(r"[^\x00-\x7FÀ-ÿ]")
+
 # Newznab category constants
 CATEGORY_MOVIES = 2000
 CATEGORY_MOVIES_SD = 2030
@@ -246,6 +257,7 @@ CATEGORY_TV = 5000
 CATEGORY_TV_SD = 5030
 CATEGORY_TV_HD = 5040
 CATEGORY_TV_UHD = 5045
+CATEGORY_TV_FOREIGN = 5020
 CATEGORY_ANIME = 5070  # Anime as TV subcategory
 CATEGORY_OTHER = 7000
 
@@ -442,6 +454,23 @@ def _detect_anime(title: str) -> bool:
     return has_episode
 
 
+def _detect_foreign(title: str) -> bool:
+    """
+    Detect foreign language TV releases.
+
+    Detection logic:
+    1. Filename contains known foreign language keywords (FRENCH, MULTI, DUBBED, etc.)
+    2. Title contains non-Latin characters (Cyrillic, Arabic, CJK, etc.)
+
+    Returns: True if foreign, False otherwise
+    """
+    if _FOREIGN_KEYWORDS_RE.search(title):
+        return True
+    if _NON_LATIN_RE.search(title):
+        return True
+    return False
+
+
 def _detect_category(title: str, metadata: Dict[str, Optional[Any]]) -> int:
     """
     Detect Newznab category based on filename and extracted metadata.
@@ -463,6 +492,11 @@ def _detect_category(title: str, metadata: Dict[str, Optional[Any]]) -> int:
     # Check for anime FIRST (priority detection)
     if _detect_anime(title):
         return CATEGORY_ANIME  # 5070 - No quality subcategories
+
+    # Check for foreign TV (before quality subcategories)
+    if has_tv_pattern := (bool(_SEASON_EP_RE.search(title))):
+        if _detect_foreign(title):
+            return CATEGORY_TV_FOREIGN  # 5020
 
     season = metadata.get("season")
     episode = metadata.get("episode")
@@ -698,10 +732,10 @@ def api():
             '<subcat id="2045" name="Movies/UHD"/>'
             "</category>"
             '<category id="5000" name="TV">'
+            '<subcat id="5020" name="TV/Foreign"/>'
             '<subcat id="5030" name="TV/SD"/>'
             '<subcat id="5040" name="TV/HD"/>'
             '<subcat id="5045" name="TV/UHD"/>'
-            '<subcat id="5070" name="TV/Anime"/>'
             "</category>"
             '<category id="7000" name="Other"/>'
             "</categories>"
@@ -746,14 +780,18 @@ def api():
             not q or q.lower() == "test"
         ):  # allow Prowlarr validation calls to receive data
             # Check if TV/Anime categories are requested
-            tv_categories = {"5000", "5030", "5040"}
+            tv_categories = {"5000", "5020", "5030", "5040", "5045"}
             anime_categories = {"5070"}
+            foreign_categories = {"5020"}
             requested_categories = set(cat_param.split(",")) if cat_param else set()
             wants_tv = t == "tvsearch" or bool(requested_categories & tv_categories)
             wants_anime = bool(requested_categories & anime_categories)
+            wants_foreign = bool(requested_categories & foreign_categories)
             # Use appropriate fallback query
             if wants_anime:
                 q = "one piece"  # Anime fallback
+            elif wants_foreign:
+                q = "engrenages"  # Foreign TV fallback (popular French show)
             elif wants_tv:
                 q = "breaking bad"  # TV fallback
             else:
@@ -790,11 +828,13 @@ def api():
 
         if fallback_query:
             # Check if TV/Anime categories are requested
-            tv_categories = {"5000", "5030", "5040"}
+            tv_categories = {"5000", "5020", "5030", "5040", "5045"}
             anime_categories = {"5070"}
+            foreign_categories = {"5020"}
             requested_categories = set(cat_param.split(",")) if cat_param else set()
             wants_tv = t == "tvsearch" or bool(requested_categories & tv_categories)
             wants_anime = bool(requested_categories & anime_categories)
+            wants_foreign = bool(requested_categories & foreign_categories)
 
             if wants_anime:
                 # Anime-appropriate fallback
@@ -806,6 +846,21 @@ def api():
                         "sig": None,
                         "size": 350 * 1024 * 1024,
                         "title": "[SampleSubs] Sample Anime Series - 01 [720p]",
+                        "sample": True,
+                        "poster": "sample@example.com",
+                        "posted": int(time.time()),
+                    }
+                ]
+            elif wants_foreign:
+                # Foreign TV fallback
+                items = [
+                    {
+                        "hash": "SAMPLEHASH_FOREIGN123",
+                        "filename": "engrenages.s01e01.french.1080p.mkv",
+                        "ext": ".mkv",
+                        "sig": None,
+                        "size": 800 * 1024 * 1024,
+                        "title": "Engrenages.S01E01.FRENCH.1080p.mkv",
                         "sample": True,
                         "poster": "sample@example.com",
                         "posted": int(time.time()),
