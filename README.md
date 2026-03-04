@@ -94,5 +94,3 @@ Add a Newznab (generic) indexer in Prowlarr:
 - API Key: the same key in your `.env` (e.g., `testkey`)
 
 ---
-
-## [☕ If this project helps you, consider buying me a coffee](https://buymeacoffee.com/gaikwadsank)
