@@ -239,11 +239,13 @@ _NON_ALNUM_RE = re.compile(r"[^\w\sÀ-ÿ]")
 
 # Newznab category constants
 CATEGORY_MOVIES = 2000
-CATEGORY_MOVIES_HD = 2030
-CATEGORY_MOVIES_UHD = 2040
+CATEGORY_MOVIES_SD = 2030
+CATEGORY_MOVIES_HD = 2040
+CATEGORY_MOVIES_UHD = 2045
 CATEGORY_TV = 5000
-CATEGORY_TV_HD = 5030
-CATEGORY_TV_UHD = 5040
+CATEGORY_TV_SD = 5030
+CATEGORY_TV_HD = 5040
+CATEGORY_TV_UHD = 5045
 CATEGORY_ANIME = 5070  # Anime as TV subcategory
 CATEGORY_OTHER = 7000
 
@@ -487,20 +489,20 @@ def _detect_category(title: str, metadata: Dict[str, Optional[Any]]) -> int:
 
     if has_tv_pattern:
         if is_uhd:
-            return CATEGORY_TV_UHD  # 5040
+            return CATEGORY_TV_UHD  # 5045
         elif is_hd:
-            return CATEGORY_TV_HD  # 5030
+            return CATEGORY_TV_HD   # 5040
         else:
-            return CATEGORY_TV  # 5000
+            return CATEGORY_TV_SD   # 5030
 
     # Movies typically have a year but no season/episode
     if year or (not has_tv_pattern):
         if is_uhd:
-            return CATEGORY_MOVIES_UHD  # 2040
+            return CATEGORY_MOVIES_UHD  # 2045
         elif is_hd:
-            return CATEGORY_MOVIES_HD  # 2030
+            return CATEGORY_MOVIES_HD   # 2040
         else:
-            return CATEGORY_MOVIES  # 2000
+            return CATEGORY_MOVIES_SD   # 2030
 
     # Default fallback to generic Movies
     return CATEGORY_MOVIES  # 2000
@@ -691,12 +693,14 @@ def api():
             "</searching>"
             "<categories>"
             '<category id="2000" name="Movies">'
-            '<subcat id="2030" name="Movies/HD"/>'
-            '<subcat id="2040" name="Movies/UHD"/>'
+            '<subcat id="2030" name="Movies/SD"/>'
+            '<subcat id="2040" name="Movies/HD"/>'
+            '<subcat id="2045" name="Movies/UHD"/>'
             "</category>"
             '<category id="5000" name="TV">'
-            '<subcat id="5030" name="TV/HD"/>'
-            '<subcat id="5040" name="TV/UHD"/>'
+            '<subcat id="5030" name="TV/SD"/>'
+            '<subcat id="5040" name="TV/HD"/>'
+            '<subcat id="5045" name="TV/UHD"/>'
             '<subcat id="5070" name="TV/Anime"/>'
             "</category>"
             '<category id="7000" name="Other"/>'
