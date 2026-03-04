@@ -1,6 +1,6 @@
 services:
   easynews_as_indexer:
-    image: ghcr.io/sanket9225/easynews_as_indexer
+    image: ghcr.io/kyberdot/easynews-indexer
     environment:
       PORT: "8081"
     ports:
