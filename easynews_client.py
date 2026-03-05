@@ -70,6 +70,7 @@ class EasynewsClient:
         Prime session and validate credentials using a quick authenticated call.
         This relies on HTTP Basic Auth configured on the session.
         """
+        self.s.get(f"{EASYNEWS_BASE}/2.0/")
         check = self.s.get(
             f"{EASYNEWS_BASE}/2.0/search/solr-search/?fly=2&gps=test&sb=1&pno=1&pby=1&u=1&chxu=1&chxgx=1&st=basic&s1=dtime&s1d=-&sS=3&vv=1&fty%5B%5D=VIDEO",
             allow_redirects=True,
